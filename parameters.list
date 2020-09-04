@@ -1,0 +1,3 @@
+role        Role the image is in (user image modification hook)
+dns-server  IP of the DNS-Server
+dns-search  DNS Search

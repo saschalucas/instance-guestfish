@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+
+set -euo pipefail
+SELF_BASE="${0%/*}"
+
+. ${SELF_BASE}/defaults/common.sh
+
+if [ -f "${SELF_BASE}/defaults/default.env" ]; then
+  . ${SELF_BASE}/defaults/default.env
+fi
+
+if [ -f "${SELF_BASE}/${OS_VARIANT}/${OS_VARIANT}.env" ]; then
+  . ${SELF_BASE}/${OS_VARIANT}/${OS_VARIANT}.env
+fi
+
+if [ -f "${SELF_BASE}/defaults/default.sh" ]; then
+  . ${SELF_BASE}/defaults/default.sh
+fi
+
+if [ -f "${SELF_BASE}/${OS_VARIANT}/${OS_VARIANT}.sh" ]; then
+  . ${SELF_BASE}/${OS_VARIANT}/${OS_VARIANT}.sh
+fi
+
+guestfish_start
+
+instance_prepare
+
+instance_configure
+
+if [ -f "${SELF_BASE}/${OS_VARIANT}/${OSP_ROLE}.sh" ]; then
+  . ${SELF_BASE}/${OS_VARIANT}/${OSP_ROLE}.sh
+  instance_apply_role
+fi
