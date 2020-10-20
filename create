@@ -1,34 +1,44 @@
 #!/usr/bin/env bash
 
+# look at /var/log/ganeti/os/ for trace
+set -x
 
 set -euo pipefail
 SELF_BASE="${0%/*}"
 
-. ${SELF_BASE}/defaults/common.sh
+# common functions
+. ${SELF_BASE}/common/common.sh
 
-if [ -f "${SELF_BASE}/defaults/default.env" ]; then
-  . ${SELF_BASE}/defaults/default.env
+# global ENV vars
+if [ -r "${SELF_BASE}/defaults/default.env" ]; then
+  . ${SELF_BASE}/common/default.env
 fi
 
-if [ -f "${SELF_BASE}/${OS_VARIANT}/${OS_VARIANT}.env" ]; then
-  . ${SELF_BASE}/${OS_VARIANT}/${OS_VARIANT}.env
+# per variant ENV vars = the config of the variant
+. ${SELF_BASE}/variants/${OS_VARIANT}.env
+
+# global functions (the implementation of this os interface)
+if [ -r "${SELF_BASE}/common/default.sh" ]; then
+  . ${SELF_BASE}/common/default.sh
 fi
 
-if [ -f "${SELF_BASE}/defaults/default.sh" ]; then
-  . ${SELF_BASE}/defaults/default.sh
+# possible per variant function override 
+if [ -r "${SELF_BASE}/${OS_VARIANT}/${OS_VARIANT}.sh" ]; then
+  . ${SELF_BASE}/variants/${OS_VARIANT}.sh
 fi
 
-if [ -f "${SELF_BASE}/${OS_VARIANT}/${OS_VARIANT}.sh" ]; then
-  . ${SELF_BASE}/${OS_VARIANT}/${OS_VARIANT}.sh
-fi
+flag_source_type
+parse_source_uri
 
 guestfish_start
 
-instance_prepare
+instance_check
+instance_prepare_before_copy
+instance_copy
+instance_prepare_after_copy
 
 instance_configure
-
-if [ -f "${SELF_BASE}/${OS_VARIANT}/${OSP_ROLE}.sh" ]; then
-  . ${SELF_BASE}/${OS_VARIANT}/${OSP_ROLE}.sh
-  instance_apply_role
-fi
+#if [ -f "${SELF_BASE}/variants/${OSP_ROLE}.sh" ]; then
+#  . ${SELF_BASE}/variants/${OSP_ROLE}.sh
+#  instance_apply_role
+#fi

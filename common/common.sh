@@ -31,7 +31,7 @@ check_deps() {
   local d search
   for d in ${DEPS}; do
     search="$(which ${d} || true)"
-    [[ -x ${search} ]] || log_fail "binary ${d} is needed, but can not be found"
+    [[ -x ${search} ]] || log_fail "binary ${d} is needed (debian package libguestfs-tools), but can not be found"
   done
 }
 
@@ -40,3 +40,7 @@ check_deps() {
 #####
 trap cleanup EXIT
 check_deps
+GUESTFISH="$(which guestfish)"
+temp_file="$(mktemp)"
+CLEANUP+=("rm ${temp_file}")
+
