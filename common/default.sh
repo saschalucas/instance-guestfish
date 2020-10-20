@@ -1,13 +1,13 @@
-# start gustfish in remote controlable daemon mode
+# start guestfish in a remote controlable daemon mode
 guestfish_prepare() {
   if [[ "${DISK_COUNT}" -eq 0 ]]; then
     log_fail "Instance has no disk"
   fi
-  # stat the guestfish with no disks attached
-  # later we figure out, what an how to add disks
+  # start the guestfish with no disks attached
+  # later we figure out, what and how to add disks
   eval "$(${GUESTFISH} --listen)"
   GUESTFISH="${GUESTFISH} --remote"
-  # guestfish will terminate on error or exit here
+  # guestfish daemon will terminate on error or exit here
   CLEANUP+=("eval ${GUESTFISH} -- exit >/dev/null 2>&1 || true")
 }  
 
@@ -134,7 +134,7 @@ instance_check(){
       SOURCE_DISK_SIZE="$(${GUESTFISH} -- blockdev-getsize64 /dev/sdb)"
     ;;
     tar)
-      # must be set in vatiant config
+      # must be set in variant config
       SOURCE_DISK_SIZE="${TARGET_MIN_SIZE}"
   esac
   if [[ "${TARGET_DISK_SIZE}" -ge ${SOURCE_DISK_SIZE} ]]; then
@@ -256,7 +256,7 @@ instance_copy() {
 
 instance_configure() {
   # mount when image
-  instance_confgiure_grub
+  instance_configure_grub
   instance_set_hostname
   instance_set_root_pwhash
   instance_set_root_ssh_auth_keys
@@ -266,7 +266,7 @@ instance_configure() {
 }
 
 # configure grub for serial console, network interface names and non multiqueue io-scheduler
-instance_confgiure_grub() {
+instance_configure_grub() {
   ${GUESTFISH} -- download /etc/default/grub ${temp_file}
   sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="console=ttyS0,115200n8 elevator=noop net.ifnames=0 earlyprintk=ttyS0,115200n8"/' ${temp_file}
   echo '# Serial console
@@ -278,10 +278,10 @@ GRUB_SERIAL_COMMAND="serial --speed=115200 --unit=0 --word=8 --parity=no --stop=
   ${GUESTFISH} -- upload ${temp_file} /etc/default/grub
   case ${SOURCE_FLAVOR} in
     ubuntu|debian)
-      ${GUESTFISH} --remote=${GUESTFISH_PID} -- command "update-grub"
+      ${GUESTFISH} -- command "update-grub"
     ;;
     *)
-      log_fail "source vlavour ${SOURCE_FLAVOR} is not implemented yet"
+      log_fail "source flavor ${SOURCE_FLAVOR} is not implemented yet"
     ;;
   esac
 }
@@ -292,7 +292,7 @@ instance_set_hostname() {
       ${GUESTFISH} -- write /etc/hostname "${INSTANCE_NAME%%.*}"
     ;;
     *)
-      log_fail "source vlavour ${SOURCE_FLAVOR} is not implemented yet"
+      log_fail "source flavor ${SOURCE_FLAVOR} is not implemented yet"
    ;;
   esac
 }
@@ -322,7 +322,7 @@ instance_manage_ssh_host_keys() {
       ${GUESTFISH} -- command "dpkg-reconfigure openssh-server"
     ;;
     *)
-      log_fail "source vlavour ${SOURCE_FLAVOR} is not implemented yet"
+      log_fail "source flavor ${SOURCE_FLAVOR} is not implemented yet"
     ;;
   esac
 }
@@ -358,7 +358,7 @@ instance_configure_network() {
         ${GUESTFISH} -- upload ${temp_file} /etc/network/interfaces
       ;;
       *)
-        log_fail "source vlavour ${SOURCE_FLAVOR} is not implemented yet"
+        log_fail "source flavor ${SOURCE_FLAVOR} is not implemented yet"
       ;;
     esac
   fi
