@@ -2,8 +2,9 @@
 
 set -euo pipefail
 
-SUITE="${SUITE:?please specify a suite: SUITE=[buster|bionic|focal] $0 dest-dir}"
-DEST="${1:?please specify a destination directory to store the result: SUITE=[buster|bionic|focal] $0 dest-dir}"
+HELP_MSG="SUITE=[buster|bionic|focal] ${0} dest-dir"
+SUITE="${SUITE:?please specify a suite: $HELP_MSG}"
+DEST="${1:?please specify a destination directory to store the result: $HELP_MSG}"
 
 case ${SUITE} in
 	bionic|focal)
@@ -33,7 +34,7 @@ chmod 755 ${tmp}
 # installs a basic system without updates
 debootstrap --arch=amd64 --include=${BASE_PACKAGES} --components=${APT_COMPONENTS} ${SUITE} ${tmp} ${MIRROR}
 
-# confgures apt
+# configures apt
 [[ -n ${http_proxy:-} ]] && echo "Acquire::http::Proxy \"${http_proxy}\";" > ${tmp}/etc/apt/apt.conf.d/99proxy
 case ${SUITE} in
         bionic|focal)
