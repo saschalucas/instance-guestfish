@@ -9,8 +9,8 @@ SELF_BASE="${0%/*}"
 # common functions
 . ${SELF_BASE}/common/common.sh
 
-# global ENV vars
-if [ -r "${SELF_BASE}/defaults/default.env" ]; then
+# defaults common to all variants
+if [ -r "${SELF_BASE}/common/default.env" ]; then
   . ${SELF_BASE}/common/default.env
 fi
 
