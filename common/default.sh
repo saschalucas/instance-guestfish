@@ -262,6 +262,7 @@ instance_configure() {
   instance_set_root_ssh_auth_keys
   instance_manage_ssh_host_keys
   instance_configure_network
+  instance_regenerate_machineid
   # umount wenn fertig
 }
 
@@ -362,4 +363,14 @@ instance_configure_network() {
       ;;
     esac
   fi
+}
+
+instance_regenerate_machineid() {
+  for f in /etc/machine-id /var/lib/dbus/machine-id; do
+    tmp="$(${GUESTFISH} -- is-file ${f})"
+    if [[ "${tmp}" = "true" ]]; then
+      ${GUESTFISH} -- rm "${f}"
+      ${GUESTFISH} -- command "dbus-uuidgen --ensure=${f}"
+    fi
+  done
 }
