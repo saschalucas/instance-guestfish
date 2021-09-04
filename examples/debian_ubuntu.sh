@@ -55,6 +55,7 @@ case ${SUITE} in
 		cat <<- EOF > ${tmp}/etc/apt/sources.list
 			deb ${MIRROR} ${SUITE} ${APT_COMPONENTS//,/ }
 			deb ${MIRROR} ${SUITE}-updates ${APT_COMPONENTS//,/ }
+			deb ${MIRROR}-security ${SUITE}-security ${APT_COMPONENTS//,/ }
 		EOF
 		;;
 esac
