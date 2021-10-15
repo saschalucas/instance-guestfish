@@ -213,7 +213,7 @@ instance_create_partition() {
   # default to 1G swap as the 1st partition
   TARGET_DISK_SWAP_SIZE=${TARGET_DISK_SWAP_SIZE:-1}
   SWAP_START="2048"
-  SWAP_END="$(( ${SWAP_START} + ( ${TARGET_DISK_SWAP_SIZE} * 1024 * 1024 * 1024 / 512 ) ))"
+  SWAP_END="$(( ${SWAP_START} + ( ${TARGET_DISK_SWAP_SIZE} * 1024 * 1024 * 1024 / 512 ) - 1))"
   DATA_START="$(( ${SWAP_END} + 1 ))"
   DATA_END="-1"
   ${GUESTFISH} -- part-add /dev/sda primary ${SWAP_START} ${SWAP_END}
