@@ -12,7 +12,7 @@ case ${SUITE} in
 		KERNEL_PACKAGE="linux-image-generic"
 		APT_COMPONENTS="main,universe,multiverse,restricted"
 		;;
-	buster|bullseye)
+	buster|bullseye|bookworm)
 		DEFAULT_MIRROR="http://deb.debian.org/debian"
 		KERNEL_PACKAGE="linux-image-amd64"
 		APT_COMPONENTS="main,contrib,non-free"
@@ -51,7 +51,7 @@ case ${SUITE} in
 			deb ${MIRROR}-security ${SUITE}/updates ${APT_COMPONENTS//,/ }
 		EOF
 		;;
-	bullseye)
+	bullseye|bookworm)
 		cat <<- EOF > ${tmp}/etc/apt/sources.list
 			deb ${MIRROR} ${SUITE} ${APT_COMPONENTS//,/ }
 			deb ${MIRROR} ${SUITE}-updates ${APT_COMPONENTS//,/ }
