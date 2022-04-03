@@ -61,7 +61,7 @@ case ${SUITE} in
 esac
 
 # configure some packages
-for i in tzdata locales; do
+for i in tzdata locales keyboard-configuration; do
   chroot ${tmp} dpkg-reconfigure ${i}
 done
 
