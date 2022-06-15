@@ -25,7 +25,7 @@ esac
 
 # let the user override the mirror
 MIRROR="${MIRROR:-${DEFAULT_MIRROR}}"
-BASE_PACKAGES="openssh-server,ifupdown,grub-pc,locales,dbus,initramfs-tools,${KERNEL_PACKAGE}"
+BASE_PACKAGES="openssh-server,ifupdown,grub-pc,locales,dbus,initramfs-tools,kbd,keyboard-configuration,${KERNEL_PACKAGE}"
 
 # mktemp creates secure dirs, however root aka "/" needs 755
 tmp="$(mktemp -d)"
