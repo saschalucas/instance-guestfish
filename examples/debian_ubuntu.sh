@@ -75,7 +75,7 @@ chroot ${tmp} apt clean
 # https://bugzilla.redhat.com/show_bug.cgi?id=1384241
 # guestfish is unwilling to include all xattrs in tar-in command
 # we will save a list of files/caps here, to later restore them (at Ganeti OS creation time)
-find ${tmp}/ -type f -print0 | xargs -0 getcap | while read f s c; do echo "cap-set-file ${f#${tmp}} ${c}"; done > ${tmp}/tmp/capabilities.guestfish
+find ${tmp}/ -type f -print0 | xargs -0 getcap | while read f s c; do echo "cap-set-file ${f#${tmp}} ${c:-${s}}"; done > ${tmp}/tmp/capabilities.guestfish
 
 # save our work
 tar --gzip --acls --selinux --xattrs --xattrs-include='*' --numeric-owner -cvf ${DEST}/${SUITE}.tar.gz -C ${tmp} .
