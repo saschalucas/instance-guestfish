@@ -309,7 +309,8 @@ instance_set_root_pwhash() {
 
 instance_set_root_ssh_auth_keys() {
   if [[ -n "${TARGET_ROOT_SSH_AUTH_KEYS}" ]]; then
-    ${GUESTFISH} -- mkdir-mode /root/.ssh 0700
+    tmp="$(${GUESTFISH} -- is-dir /root/.ssh)"
+    [[ "${tmp}" = "true" ]] || ${GUESTFISH} -- mkdir-mode /root/.ssh 0700
     ${GUESTFISH} -- write /root/.ssh/authorized_keys "${TARGET_ROOT_SSH_AUTH_KEYS}"
   fi
 }
