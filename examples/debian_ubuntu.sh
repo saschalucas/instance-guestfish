@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-HELP_MSG="SUITE=[buster|bullseye|bionic|focal|jammy] ${0} dest-dir"
+HELP_MSG="SUITE=[buster|bullseye|bookworm|bionic|focal|jammy] ${0} dest-dir"
 SUITE="${SUITE:?please specify a suite: $HELP_MSG}"
 DEST="${1:?please specify a destination directory to store the result: $HELP_MSG}"
 
