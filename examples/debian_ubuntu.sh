@@ -10,12 +10,12 @@ case ${SUITE} in
 	bionic|focal|jammy)
 		DEFAULT_MIRROR="http://archive.ubuntu.com/ubuntu"
 		KERNEL_PACKAGE="linux-image-generic"
-		APT_COMPONENTS="main,universe,multiverse,restricted"
+		APT_COMPONENTS="main,universe"
 		;;
-	buster|bullseye|bookworm)
+	buster|bullseye|bookworm|trixie)
 		DEFAULT_MIRROR="http://deb.debian.org/debian"
 		KERNEL_PACKAGE="linux-image-amd64"
-		APT_COMPONENTS="main,contrib,non-free"
+		APT_COMPONENTS="main"
 		;;
 	*)
 		echo "unhandled SUITE=${SUITE}"
@@ -51,7 +51,7 @@ case ${SUITE} in
 			deb ${MIRROR}-security ${SUITE}/updates ${APT_COMPONENTS//,/ }
 		EOF
 		;;
-	bullseye|bookworm)
+	bullseye|bookworm|trixie)
 		cat <<- EOF > ${tmp}/etc/apt/sources.list
 			deb ${MIRROR} ${SUITE} ${APT_COMPONENTS//,/ }
 			deb ${MIRROR} ${SUITE}-updates ${APT_COMPONENTS//,/ }
