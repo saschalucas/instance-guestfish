@@ -2,12 +2,12 @@
 
 set -euo pipefail
 
-HELP_MSG="SUITE=[buster|bullseye|bookworm|bionic|focal|jammy] ${0} dest-dir"
+HELP_MSG="SUITE=[buster|bullseye|bookworm|trixie|bionic|focal|jammy|noble] ${0} dest-dir"
 SUITE="${SUITE:?please specify a suite: $HELP_MSG}"
 DEST="${1:?please specify a destination directory to store the result: $HELP_MSG}"
 
 case ${SUITE} in
-	bionic|focal|jammy)
+	bionic|focal|jammy|noble)
 		DEFAULT_MIRROR="http://archive.ubuntu.com/ubuntu"
 		KERNEL_PACKAGE="linux-image-generic"
 		APT_COMPONENTS="main,universe"
@@ -37,7 +37,7 @@ debootstrap --arch=amd64 --include=${BASE_PACKAGES} --components=${APT_COMPONENT
 # configures apt
 [[ -n ${http_proxy:-} ]] && echo "Acquire::http::Proxy \"${http_proxy}\";" > ${tmp}/etc/apt/apt.conf.d/99proxy
 case ${SUITE} in
-        bionic|focal|jammy)
+        bionic|focal|jammy|noble)
 		cat <<- EOF > ${tmp}/etc/apt/sources.list
 			deb ${MIRROR} ${SUITE} ${APT_COMPONENTS//,/ }
 			deb ${MIRROR} ${SUITE}-updates ${APT_COMPONENTS//,/ }
