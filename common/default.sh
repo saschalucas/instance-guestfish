@@ -263,6 +263,7 @@ instance_configure() {
   instance_manage_ssh_host_keys
   instance_configure_network
   instance_regenerate_machineid
+  instance_iscsi_new_iqn
   # umount wenn fertig
 }
 
@@ -371,7 +372,17 @@ instance_regenerate_machineid() {
     tmp="$(${GUESTFISH} -- is-file ${f})"
     if [[ "${tmp}" = "true" ]]; then
       ${GUESTFISH} -- rm "${f}"
-      ${GUESTFISH} -- command "dbus-uuidgen --ensure=${f}"
+      # when /etc/machine-id is an emtpy file a new ID will be generated
+      if [[ "${i}" = "/etc/machine-id" ]]; then
+        ${GUESTFISH} --remote=${GUESTFISH_PID} -- touch ${i}
+      fi
     fi
   done
+}
+
+instance_iscsi_new_iqn() {
+  tmp="$(${GUESTFISH} --remote=${GUESTFISH_PID} -- is-file /etc/iscsi/initiatorname.iscsi)"
+  if [[ "${tmp}" = "true" ]]; then
+    ${GUESTFISH} --remote=${GUESTFISH_PID} -- write /etc/iscsi/initiatorname.iscsi "GenerateName=yes"
+  fi
 }
