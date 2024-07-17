@@ -35,7 +35,11 @@ chmod 755 ${tmp}
 debootstrap --arch=amd64 --include=${BASE_PACKAGES} --components=${APT_COMPONENTS} ${SUITE} ${tmp} ${MIRROR}
 
 # configures apt
-[[ -n ${http_proxy:-} ]] && echo "Acquire::http::Proxy \"${http_proxy}\";" > ${tmp}/etc/apt/apt.conf.d/99proxy
+if [[ -n ${http_proxy:-} ]]; then
+  echo "Acquire::http::Proxy \"${http_proxy}\";" > ${tmp}/etc/apt/apt.conf.d/99proxy
+  echo "Acquire::ForceIPv4 \"true\";" >> ${tmp}/etc/apt/apt.conf.d/99proxy
+fi
+
 case ${SUITE} in
         bionic|focal|jammy|noble)
 		cat <<- EOF > ${tmp}/etc/apt/sources.list
