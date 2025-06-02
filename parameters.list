@@ -1,3 +1,5 @@
 role        Role the image is in (user image modification hook)
 dns-server  IP of the DNS-Server
 dns-search  DNS Search
+root_pw_hash Hash of the root password (use mkpasswd -m sha-512 to create)
+root_ssh_auth_key SSH public key for root login
