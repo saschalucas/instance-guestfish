@@ -163,7 +163,17 @@ instance_prepare_after_copy() {
     instance_create_fstab
   fi
   if [[ "${TARGET_DISK_NEEDS_GRUBINSTALL:-}" == "true" ]]; then
-    ${GUESTFISH} -- command "grub-install /dev/sda"
+    case ${SOURCE_FLAVOR} in
+      ubuntu|debian)
+        ${GUESTFISH} -- command "grub-install /dev/sda"
+      ;;
+      suse)
+        ${GUESTFISH} -- command "grub2-install /dev/sda"
+      ;;
+      *)
+        log_fail "source flavor ${SOURCE_FLAVOR} is not implemented yet"
+      ;;
+    esac
   fi
 }
 
@@ -275,12 +285,17 @@ instance_configure_grub() {
 GRUB_TIMEOUT_STYLE=menu
 GRUB_TIMEOUT=8
 GRUB_TERMINAL=serial
+GRUB_DISABLE_OS_PROBER=true
 GRUB_SERIAL_COMMAND="serial --speed=115200 --unit=0 --word=8 --parity=no --stop=1"
 ' >> ${temp_file}
   ${GUESTFISH} -- upload ${temp_file} /etc/default/grub
   case ${SOURCE_FLAVOR} in
     ubuntu|debian)
       ${GUESTFISH} -- command "update-grub"
+    ;;
+    suse)
+      ${GUESTFISH} -- command "dracut --regenerate-all"
+      ${GUESTFISH} -- command "grub2-mkconfig -o /boot/grub2/grub.cfg"
     ;;
     *)
       log_fail "source flavor ${SOURCE_FLAVOR} is not implemented yet"
@@ -290,7 +305,7 @@ GRUB_SERIAL_COMMAND="serial --speed=115200 --unit=0 --word=8 --parity=no --stop=
 
 instance_set_hostname() {
   case ${SOURCE_FLAVOR} in
-    ubuntu|debian)
+    ubuntu|debian|suse)
       ${GUESTFISH} -- write /etc/hostname "${INSTANCE_NAME%%.*}"
     ;;
     *)
@@ -323,6 +338,9 @@ instance_manage_ssh_host_keys() {
   case ${SOURCE_FLAVOR} in
     ubuntu|debian)
       ${GUESTFISH} -- command "dpkg-reconfigure openssh-server"
+    ;;
+    suse)
+      ${GUESTFISH} -- command "ssh-keygen -A"
     ;;
     *)
       log_fail "source flavor ${SOURCE_FLAVOR} is not implemented yet"
@@ -360,6 +378,15 @@ instance_configure_network() {
 	EOF
         ${GUESTFISH} -- upload ${temp_file} /etc/network/interfaces
       ;;
+      suse)
+        cat <<-EOF > ${temp_file}
+		BOOTPROTO=static
+		STARTMODE=auto
+		IPADDR=${NIC_0_IP}/${NIC_0_NETWORK_SUBNET##*/}
+	EOF
+        ${GUESTFISH} -- upload ${temp_file} /etc/sysconfig/network/ifcfg-eth0
+        ${GUESTFISH} -- write /etc/sysconfig/network/routes "default ${NIC_0_NETWORK_GATEWAY} - -"
+      ;;
       *)
         log_fail "source flavor ${SOURCE_FLAVOR} is not implemented yet"
       ;;
@@ -373,8 +400,8 @@ instance_regenerate_machineid() {
     if [[ "${tmp}" = "true" ]]; then
       ${GUESTFISH} -- rm "${f}"
       # when /etc/machine-id is an emtpy file a new ID will be generated
-      if [[ "${i}" = "/etc/machine-id" ]]; then
-        ${GUESTFISH} --remote=${GUESTFISH_PID} -- touch ${i}
+      if [[ "${f}" = "/etc/machine-id" ]]; then
+        ${GUESTFISH} --remote=${GUESTFISH_PID} -- touch ${f}
       fi
     fi
   done
