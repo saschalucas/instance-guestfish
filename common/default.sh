@@ -219,20 +219,55 @@ instance_disk_resize() {
 }
 
 instance_create_partition() {
-  ${GUESTFISH} -- part-init /dev/sda ${TARGET_DISK_PARTITON_TYPE:-mbr}
-  # default to 1G swap as the 1st partition
-  TARGET_DISK_SWAP_SIZE=${TARGET_DISK_SWAP_SIZE:-1}
-  SWAP_START="2048"
-  SWAP_END="$(( ${SWAP_START} + ( ${TARGET_DISK_SWAP_SIZE} * 1024 * 1024 * 1024 / 512 ) - 1))"
-  DATA_START="$(( ${SWAP_END} + 1 ))"
-  DATA_END="-1"
+  ${GUESTFISH} -- part-init /dev/sda ${TARGET_DISK_PARTITON_TYPE:=gpt}
+  TARGET_DISK_SIZE="$(${GUESTFISH} -- blockdev-getsize64 /dev/sda)"
+  # default to 1G swap
+  TARGET_DISK_SWAP_SIZE="${TARGET_DISK_SWAP_SIZE:-$(( 1024 * 1024 * 1024 ))}"
+  LBA_START=2048
+  EFI_SECTORS="$(( 500 * 1024 * 1024 / 512 ))"
+  case ${TARGET_DISK_PARTITON_TYPE} in
+    efi|gpt)
+      EFI_START="${LBA_START}"
+      EFI_END="$(( ${EFI_START} + ${EFI_SECTORS} -1 ))"
+      ${GUESTFISH} -- part-add /dev/sda primary ${EFI_START} ${EFI_END}
+      # https://en.wikipedia.org/wiki/GUID_Partition_Table#Partition_type_GUIDs
+      ${GUESTFISH} -- part-set-gpt-type /dev/sda 1 21686148-6449-6E6F-744E-656564454649
+      #${GUESTFISH} -- part-set-gpt-type /dev/sda 1 C12A7328-F81F-11D2-BA4B-00A0C93EC93B
+      SWAP_START="$(( ${EFI_END} + 1 ))"
+      SWAP_SECTORS="$(( ( ${TARGET_DISK_SWAP_SIZE} / 512 ) - ${EFI_SECTORS}))"
+      SWAP_END="$(( ${SWAP_START} + ${SWAP_SECTORS} -1 ))"
+      DATA_START="$(( ${SWAP_END} + 1 ))"
+      DATA_END="$(( ( ${TARGET_DISK_SIZE} / 512 ) - 33 - 1 ))"
+    ;;
+
+    mbr|msdos)
+      SWAP_START="${LBA_START}"
+      SWAP_SECTORS="$(( ${TARGET_DISK_SWAP_SIZE} / 512 ))"
+      SWAP_END="$(( ${SWAP_START} + ${SWAP_SECTORS} - 1 ))"
+      DATA_START="$(( ${SWAP_END} + 1 ))"
+      DATA_END="-1"
+    ;;
+
+  esac
+
   ${GUESTFISH} -- part-add /dev/sda primary ${SWAP_START} ${SWAP_END}
   ${GUESTFISH} -- part-add /dev/sda primary ${DATA_START} ${DATA_END}
 }
 
 instance_create_rootfs() {
-  TARGET_DISK_SWAP_DEV="/dev/sda1"
-  TARGET_DISK_DATA_DEV="/dev/sda2"
+  case ${TARGET_DISK_PARTITON_TYPE} in
+    efi|gpt)
+      TARGET_DISK_SWAP_DEV="/dev/sda2"
+      TARGET_DISK_DATA_DEV="/dev/sda3"
+    ;;
+
+    mbr|msdos)
+      TARGET_DISK_SWAP_DEV="/dev/sda1"
+      TARGET_DISK_DATA_DEV="/dev/sda2"
+    ;;
+
+  esac
+
   ${GUESTFISH} -- mkswap ${TARGET_DISK_SWAP_DEV}
   ${GUESTFISH} -- mkfs ${TARGET_DISK_FILESYSTEM:-ext4} ${TARGET_DISK_DATA_DEV}
   ${GUESTFISH} -- mount ${TARGET_DISK_DATA_DEV} /
