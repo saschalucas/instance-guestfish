@@ -10,10 +10,6 @@ SELF_BASE="${0%/*}"
 . ${SELF_BASE}/common/common.sh
 # global functions (the implementation of this os interface)
 . ${SELF_BASE}/common/default.sh
-# per site settings
-if [ -r "${SELF_BASE}/common/site.sh" ]; then
-  . ${SELF_BASE}/common/site.sh
-fi
 # possible per variant function override 
 if [ -r "${SELF_BASE}/${OS_VARIANT}/${OS_VARIANT}.sh" ]; then
   . ${SELF_BASE}/variants/${OS_VARIANT}.sh
@@ -22,6 +18,10 @@ fi
 # defaults ENV for all variants
 if [ -r "${SELF_BASE}/variants/default.env" ]; then
   . ${SELF_BASE}/variants/default.env
+fi
+# per site settings
+if [ -r "${SELF_BASE}/variants/site.env" ]; then
+  . ${SELF_BASE}/variants/site.env
 fi
 # per variant ENV vars = the config of the variant
 . ${SELF_BASE}/variants/${OS_VARIANT}.env
