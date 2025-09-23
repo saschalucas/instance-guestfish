@@ -350,8 +350,13 @@ instance_set_hostname() {
 }
 
 instance_set_root_pwhash() {
-  if [[ -n "${TARGET_ROOT_PWHASH:=${OSP_ROOT_PW_HASH:-}}" ]]; then
-    ${GUESTFISH} -- command "usermod -p ${TARGET_ROOT_PWHASH} root"
+  if [[ -n "${TARGET_ROOT_PWHASH:-}" ]]; then
+    ROOT_PWHASH="${TARGET_ROOT_PWHASH}"
+  elif [[ -n "${OSP_ROOT_PW_HASH:-}" ]]; then
+    ROOT_PWHASH="${OSP_ROOT_PW_HASH}"
+  fi
+  if [[ -n "${ROOT_PWHASH:-}" ]]; then
+    ${GUESTFISH} -- command "usermod -p ${ROOT_PWHASH} root"
     ${GUESTFISH} -- download /etc/ssh/sshd_config ${temp_file}
     sed -r -i 's/^(|#|# )PermitRootLogin.*/PermitRootLogin yes/' ${temp_file}
     ${GUESTFISH} -- upload ${temp_file} /etc/ssh/sshd_config
@@ -359,11 +364,12 @@ instance_set_root_pwhash() {
 }
 
 instance_set_root_ssh_auth_keys() {
-  if [[ -n "${TARGET_ROOT_SSH_AUTH_KEYS:=${OSP_ROOT_SSH_AUTH_KEY:-}}" ]]; then
-    tmp="$(${GUESTFISH} -- is-dir /root/.ssh)"
-    [[ "${tmp}" = "true" ]] || ${GUESTFISH} -- mkdir-mode /root/.ssh 0700
-    ${GUESTFISH} -- write /root/.ssh/authorized_keys "${TARGET_ROOT_SSH_AUTH_KEYS}"
-  fi
+  > ${temp_file}
+  [[ -n "${TARGET_ROOT_SSH_AUTH_KEYS:-}" ]] && echo "${TARGET_ROOT_SSH_AUTH_KEYS}" >> ${temp_file}
+  [[ -n "${OSP_ROOT_SSH_AUTH_KEY:-}"     ]] && echo "${OSP_ROOT_SSH_AUTH_KEY}" >> ${temp_file}
+  tmp="$(${GUESTFISH} -- is-dir /root/.ssh)"
+  [[ "${tmp}" = "true" ]] || ${GUESTFISH} -- mkdir-mode /root/.ssh 0700
+  ${GUESTFISH} -- upload ${temp_file} /root/.ssh/authorized_keys
 }
 
 instance_manage_ssh_host_keys() {
