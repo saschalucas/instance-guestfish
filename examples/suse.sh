@@ -7,8 +7,11 @@ SUITE="${SUITE:?please specify a suite: $HELP_MSG}"
 DEST="${1:?please specify a destination directory to store the result: $HELP_MSG}"
 
 case ${SUITE} in
-	leap*)
-		REL_VER="${SUITE#leap}"
+	leap15.*)
+		REL_PKG="openSUSE-repos"
+		;;
+	leap16.*)
+		REL_PKG="Leap-release"
 		;;
 	*)
 		echo "unhandled SUITE=${SUITE}"
@@ -16,6 +19,7 @@ case ${SUITE} in
 		;;
 esac
 
+REL_VER="${SUITE#leap}"
 BASE_PACKAGES="openssh-server wicked grub2-i386-pc kernel-default"
 
 # mktemp creates secure dirs, however root aka "/" needs 755
@@ -23,10 +27,16 @@ tmp="$(mktemp -d)"
 chmod 755 ${tmp}
 
 # installs a basic system
+# https://en.opensuse.org/Package_repositories
 zypper -R ${tmp} addrepo --refresh "http://download.opensuse.org/distribution/leap/${REL_VER}/repo/oss" "default-repo-oss"
-zypper -R ${tmp} addrepo --refresh "http://download.opensuse.org/update/leap/${REL_VER}/oss"            "default-repo-update-oss"
+# Leap 16.0 No dedicated update repository as we use repo-oss for updates as well.
+case ${SUITE} in
+	leap15.*)
+		zypper -R ${tmp} addrepo --refresh "http://download.opensuse.org/update/leap/${REL_VER}/oss"            "default-repo-update-oss"
+		;;
+esac
 zypper -R ${tmp} --gpg-auto-import-keys refresh
-zypper -R ${tmp} -vn install openSUSE-repos || true
+zypper -R ${tmp} -vn install ${REL_PKG}
 rm ${tmp}/etc/zypp/repos.d/default-repo-*
 
 cp /etc/resolv.conf ${tmp}/etc/
@@ -38,6 +48,7 @@ chroot ${tmp} zypper -vn install -t pattern enhanced_base
 chroot ${tmp} zypper -vn install ${BASE_PACKAGES}
 chroot ${tmp} zypper clean
 chroot ${tmp} systemctl enable sshd.service
+chroot ${tmp} update-ca-certificates -f
 
 # https://bugzilla.redhat.com/show_bug.cgi?id=1384241
 # guestfish is unwilling to include all xattrs in tar-in command
@@ -49,4 +60,3 @@ tar --gzip --acls --selinux --xattrs --xattrs-include='*' --numeric-owner -cvf $
 
 # cleanup
 rm -rf ${tmp}
-

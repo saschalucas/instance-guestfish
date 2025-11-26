@@ -357,9 +357,14 @@ instance_set_root_pwhash() {
   fi
   if [[ -n "${ROOT_PWHASH:-}" ]]; then
     ${GUESTFISH} -- command "usermod -p ${ROOT_PWHASH} root"
-    ${GUESTFISH} -- download /etc/ssh/sshd_config ${temp_file}
-    sed -r -i 's/^(|#|# )PermitRootLogin.*/PermitRootLogin yes/' ${temp_file}
-    ${GUESTFISH} -- upload ${temp_file} /etc/ssh/sshd_config
+    tmp="$(${GUESTFISH} -- is-dir /etc/ssh/sshd_config.d)"
+    if [[ "${tmp}" = "true" ]]; then
+      ${GUESTFISH} -- write /etc/ssh/sshd_config.d/99ganeti-os.conf "PermitRootLogin yes"
+    else
+      ${GUESTFISH} -- download /etc/ssh/sshd_config ${temp_file}
+      sed -r -i 's/^(|#|# )PermitRootLogin.*/PermitRootLogin yes/' ${temp_file}
+      ${GUESTFISH} -- upload ${temp_file} /etc/ssh/sshd_config
+    fi
   fi
 }
 
