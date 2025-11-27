@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-HELP_MSG="SUITE=[buster|bullseye|bookworm|trixie|bionic|focal|jammy|noble] ${0} dest-dir"
+HELP_MSG="SUITE=[buster|bullseye|bookworm|trixie|forky|bionic|focal|jammy|noble] ${0} dest-dir"
 SUITE="${SUITE:?please specify a suite: $HELP_MSG}"
 DEST="${1:?please specify a destination directory to store the result: $HELP_MSG}"
 
@@ -12,7 +12,7 @@ case ${SUITE} in
 		KERNEL_PACKAGE="linux-image-generic"
 		APT_COMPONENTS="main,universe"
 		;;
-	buster|bullseye|bookworm|trixie)
+	buster|bullseye|bookworm|trixie|forky)
 		DEFAULT_MIRROR="http://deb.debian.org/debian"
 		KERNEL_PACKAGE="linux-image-amd64"
 		APT_COMPONENTS="main"
@@ -55,7 +55,7 @@ case ${SUITE} in
 			deb ${MIRROR}-security ${SUITE}/updates ${APT_COMPONENTS//,/ }
 		EOF
 		;;
-	bullseye|bookworm|trixie)
+	bullseye|bookworm|trixie|forky)
 		cat <<- EOF > ${tmp}/etc/apt/sources.list
 			deb ${MIRROR} ${SUITE} ${APT_COMPONENTS//,/ }
 			deb ${MIRROR} ${SUITE}-updates ${APT_COMPONENTS//,/ }

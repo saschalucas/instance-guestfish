@@ -2,6 +2,7 @@ debian-buster
 debian-bullseye
 debian-bookworm
 debian-trixie
+debian-forky
 ubuntu-bionic
 ubuntu-focal
 ubuntu-jammy
