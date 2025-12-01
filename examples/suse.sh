@@ -20,6 +20,9 @@ case ${SUITE} in
 esac
 
 REL_VER="${SUITE#leap}"
+DEFAULT_MIRROR="http://cdn.opensuse.org"
+# let the user override the mirror
+MIRROR="${MIRROR:-${DEFAULT_MIRROR}}"
 BASE_PACKAGES="openssh-server wicked grub2-i386-pc kernel-default"
 
 # mktemp creates secure dirs, however root aka "/" needs 755
@@ -49,6 +52,11 @@ chroot ${tmp} zypper -vn install ${BASE_PACKAGES}
 chroot ${tmp} zypper clean
 chroot ${tmp} systemctl enable sshd.service
 chroot ${tmp} update-ca-certificates -f
+if [[ -f ${tmp}/usr/share/zypp/local/service/openSUSE/repo/opensuse-leap-repoindex.xml ]]; then
+	sed -i s'#disturl="http://cdn.opensuse.org"#disturl="'${MIRROR}'"#' ${tmp}/usr/share/zypp/local/service/openSUSE/repo/opensuse-leap-repoindex.xml
+	chroot ${tmp} zypper refresh-services
+	chroot ${tmp} zypper refresh
+fi
 
 # https://bugzilla.redhat.com/show_bug.cgi?id=1384241
 # guestfish is unwilling to include all xattrs in tar-in command
