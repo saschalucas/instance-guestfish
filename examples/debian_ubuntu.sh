@@ -7,7 +7,7 @@ SUITE="${SUITE:?please specify a suite: $HELP_MSG}"
 DEST="${1:?please specify a destination directory to store the result: $HELP_MSG}"
 
 case ${SUITE} in
-	bionic|focal|jammy|noble)
+	bionic|focal|jammy|noble|resolute)
 		DEFAULT_MIRROR="http://archive.ubuntu.com/ubuntu"
 		KERNEL_PACKAGE="linux-image-generic"
 		INITRAMFS_TOOLS="initramfs-tools"
