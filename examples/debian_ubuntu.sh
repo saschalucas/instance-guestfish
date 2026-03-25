@@ -10,12 +10,20 @@ case ${SUITE} in
 	bionic|focal|jammy|noble)
 		DEFAULT_MIRROR="http://archive.ubuntu.com/ubuntu"
 		KERNEL_PACKAGE="linux-image-generic"
+		INITRAMFS_TOOLS="initramfs-tools"
 		APT_COMPONENTS="main,universe"
 		;;
-	buster|bullseye|bookworm|trixie|forky)
+	buster|bullseye|bookworm|trixie)
 		DEFAULT_MIRROR="http://deb.debian.org/debian"
 		KERNEL_PACKAGE="linux-image-amd64"
+		INITRAMFS_TOOLS="initramfs-tools"
 		APT_COMPONENTS="main"
+		;;
+	forky)
+		DEFAULT_MIRROR="http://deb.debian.org/debian"
+                KERNEL_PACKAGE="linux-image-amd64"
+		INITRAMFS_TOOLS="dracut"
+                APT_COMPONENTS="main"
 		;;
 	*)
 		echo "unhandled SUITE=${SUITE}"
@@ -25,7 +33,7 @@ esac
 
 # let the user override the mirror
 MIRROR="${MIRROR:-${DEFAULT_MIRROR}}"
-BASE_PACKAGES="openssh-server,ifupdown,grub-pc,locales,dbus,initramfs-tools,kbd,keyboard-configuration,${KERNEL_PACKAGE}"
+BASE_PACKAGES="openssh-server,ifupdown,grub-pc,locales,dbus,${INITRAMFS_TOOLS},kbd,keyboard-configuration,${KERNEL_PACKAGE},zstd"
 
 # mktemp creates secure dirs, however root aka "/" needs 755
 tmp="$(mktemp -d)"
