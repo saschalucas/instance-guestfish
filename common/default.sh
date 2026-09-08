@@ -166,10 +166,10 @@ instance_prepare_after_copy() {
     instance_install_grub
     case ${SOURCE_FLAVOR} in
       ubuntu|debian)
-        ${GUESTFISH} -- command "grub-install --target=${GRUB_TARGET} /dev/sda"
+        ${GUESTFISH} -- command "grub-install --target=${GRUB_TARGET} --removable /dev/sda"
       ;;
       suse)
-        ${GUESTFISH} -- command "grub2-install --target=${GRUB_TARGET} /dev/sda"
+        ${GUESTFISH} -- command "grub2-install --target=${GRUB_TARGET} --removable /dev/sda"
       ;;
       *)
         log_fail "source flavor ${SOURCE_FLAVOR} is not implemented yet"
