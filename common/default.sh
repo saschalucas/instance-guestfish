@@ -163,18 +163,38 @@ instance_prepare_after_copy() {
     instance_create_fstab
   fi
   if [[ "${TARGET_DISK_NEEDS_GRUBINSTALL:-}" == "true" ]]; then
+    instance_install_grub
     case ${SOURCE_FLAVOR} in
       ubuntu|debian)
-        ${GUESTFISH} -- command "grub-install /dev/sda"
+        ${GUESTFISH} -- command "grub-install --target=${GRUB_TARGET} /dev/sda"
       ;;
       suse)
-        ${GUESTFISH} -- command "grub2-install /dev/sda"
+        ${GUESTFISH} -- command "grub2-install --target=${GRUB_TARGET} /dev/sda"
       ;;
       *)
         log_fail "source flavor ${SOURCE_FLAVOR} is not implemented yet"
       ;;
     esac
   fi
+}
+
+# grub-pc or grub-efi-amd64
+instance_install_grub() {
+  case ${SOURCE_FLAVOR} in
+    ubuntu|debian)
+      if [[ "${INSTANCE_HV_boot_type:-}" == "uefi" ]]; then
+        GRUB_PKG="grub-efi-amd64"
+	GRUB_TARGET="x86_64-efi"
+      else
+        GRUB_PKG="grub-pc"
+	GRUB_TARGET="i386-pc"
+      fi
+      file="$(${GUESTFISH} -- glob-expand /${GRUB_PKG}*.deb)"
+      if [[ -n "${file}" ]]; then
+        ${GUESTFISH} -- command "apt install -y ${file}"
+      fi
+    ;;
+  esac
 }
 
 instance_create_fstab() {
@@ -191,6 +211,10 @@ instance_create_fstab() {
 UUID=${TARGET_DISK_DATA_UUID} / ${TARGET_DISK_FILESYSTEM:-ext4} errors=remount-ro 0 1
 UUID=${TARGET_DISK_SWAP_UUID} none swap sw 0 0
 EOF
+  if [[ "${INSTANCE_HV_boot_type:-}" == "uefi" ]]; then
+    TARGET_DISK_ESP_UUID=$(${GUESTFISH} -- blkid ${TARGET_DISK_ESP_DEV} | grep ^UUID | awk '{print $2}')
+    echo "UUID=${TARGET_DISK_ESP_UUID} /boot/efi vfat noatime,nodev,nosuid,noexec 0 2" >> ${temp_file}
+  fi
   ${GUESTFISH} -- upload ${temp_file} /etc/fstab
 }
 
@@ -231,8 +255,11 @@ instance_create_partition() {
       EFI_END="$(( ${EFI_START} + ${EFI_SECTORS} -1 ))"
       ${GUESTFISH} -- part-add /dev/sda primary ${EFI_START} ${EFI_END}
       # https://en.wikipedia.org/wiki/GUID_Partition_Table#Partition_type_GUIDs
-      ${GUESTFISH} -- part-set-gpt-type /dev/sda 1 21686148-6449-6E6F-744E-656564454649
-      #${GUESTFISH} -- part-set-gpt-type /dev/sda 1 C12A7328-F81F-11D2-BA4B-00A0C93EC93B
+      if [[ "${INSTANCE_HV_boot_type:-}" == "uefi" ]]; then
+        ${GUESTFISH} -- part-set-gpt-type /dev/sda 1 C12A7328-F81F-11D2-BA4B-00A0C93EC93B
+      else
+        ${GUESTFISH} -- part-set-gpt-type /dev/sda 1 21686148-6449-6E6F-744E-656564454649
+      fi
       SWAP_START="$(( ${EFI_END} + 1 ))"
       SWAP_SECTORS="$(( ( ${TARGET_DISK_SWAP_SIZE} / 512 ) - ${EFI_SECTORS}))"
       SWAP_END="$(( ${SWAP_START} + ${SWAP_SECTORS} -1 ))"
@@ -257,6 +284,7 @@ instance_create_partition() {
 instance_create_rootfs() {
   case ${TARGET_DISK_PARTITON_TYPE} in
     efi|gpt)
+      TARGET_DISK_ESP_DEV="/dev/sda1"
       TARGET_DISK_SWAP_DEV="/dev/sda2"
       TARGET_DISK_DATA_DEV="/dev/sda3"
     ;;
@@ -271,6 +299,11 @@ instance_create_rootfs() {
   ${GUESTFISH} -- mkswap ${TARGET_DISK_SWAP_DEV}
   ${GUESTFISH} -- mkfs ${TARGET_DISK_FILESYSTEM:-ext4} ${TARGET_DISK_DATA_DEV}
   ${GUESTFISH} -- mount ${TARGET_DISK_DATA_DEV} /
+  if [[ "${INSTANCE_HV_boot_type:-}" == "uefi" ]]; then
+    ${GUESTFISH} -- mkfs vfat ${TARGET_DISK_ESP_DEV}
+    ${GUESTFISH} -- mkdir-p /boot/efi
+    ${GUESTFISH} -- mount ${TARGET_DISK_ESP_DEV} /boot/efi
+  fi
 }
 
 instance_copy() {

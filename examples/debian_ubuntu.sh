@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-HELP_MSG="SUITE=[buster|bullseye|bookworm|trixie|forky|bionic|focal|jammy|noble] ${0} dest-dir"
+HELP_MSG="SUITE=[buster|bullseye|bookworm|trixie|forky|bionic|focal|jammy|noble|resolute] ${0} dest-dir"
 SUITE="${SUITE:?please specify a suite: $HELP_MSG}"
 DEST="${1:?please specify a destination directory to store the result: $HELP_MSG}"
 
@@ -33,7 +33,7 @@ esac
 
 # let the user override the mirror
 MIRROR="${MIRROR:-${DEFAULT_MIRROR}}"
-BASE_PACKAGES="openssh-server,ifupdown,grub-pc,locales,dbus,${INITRAMFS_TOOLS},kbd,keyboard-configuration,${KERNEL_PACKAGE},zstd"
+BASE_PACKAGES="openssh-server,ifupdown,grub-pc-bin,grub-efi-amd64-bin,grub2-common,locales,dbus,${INITRAMFS_TOOLS},kbd,keyboard-configuration,${KERNEL_PACKAGE},zstd"
 
 # mktemp creates secure dirs, however root aka "/" needs 755
 tmp="$(mktemp -d)"
@@ -83,6 +83,9 @@ chroot ${tmp} apt update
 chroot ${tmp} apt -y full-upgrade
 chroot ${tmp} apt -y autoremove --purge
 chroot ${tmp} apt clean
+
+# pre download grub for later install
+chroot ${tmp} apt download grub-pc grub-efi-amd64
 
 # https://bugzilla.redhat.com/show_bug.cgi?id=1384241
 # guestfish is unwilling to include all xattrs in tar-in command
